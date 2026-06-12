@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Productos — Plataforma Proveedores ML</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="contenido-principal">
+
+    <!-- Topbar SIN botón cerrar sesión (está en el modal de perfil) -->
+    <header class="topbar">
+      <div class="topbar__izquierda">
+        <button class="btn-menu-toggle" id="btn-menu-toggle" aria-label="Abrir menu">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+        </button>
+        <div>
+          <p class="topbar__titulo" id="topbar-titulo">Productos</p>
+          <p class="topbar__subtitulo" id="topbar-subtitulo">Gestion del catalogo</p>
+        </div>
+      </div>
+    </header>
+
+    <main class="pagina">
+      <div class="pagina__top-row">
+        <div class="filtros-contadores filtros-contadores--flex">
+          <div class="contador-pill contador-pill--total">
+            <strong id="contador-total">0</strong> productos
+          </div>
+        </div>
+        <button class="btn btn--primario pagina__top-row-btn" id="btn-nuevo-producto" data-roles="proveedor,administrador">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+          Cargar producto
+        </button>
+      </div>
+
+      <div class="filtros-barra">
+        <div class="filtro-grupo" style="flex:2;min-width:200px;">
+          <label for="filtro-busqueda">Busqueda</label>
+          <input class="form-control" type="text" id="filtro-busqueda" placeholder="Nombre o categoria...">
+        </div>
+        <div class="filtro-grupo">
+          <label for="filtro-categoria">Categoria</label>
+          <select class="form-control" id="filtro-categoria">
+            <option value="">Todas las categorias</option>
+          </select>
+        </div>
+        <div class="filtro-grupo" style="min-width:130px;">
+          <label for="filtro-precio-min">Precio min DML</label>
+          <input class="form-control" type="number" id="filtro-precio-min" placeholder="0" min="0">
+        </div>
+        <div class="filtro-grupo" style="min-width:130px;">
+          <label for="filtro-precio-max">Precio max DML</label>
+          <input class="form-control" type="number" id="filtro-precio-max" placeholder="Sin limite" min="0">
+        </div>
+        <div style="display:flex;align-items:flex-end;">
+          <button class="btn btn--secundario" id="btn-limpiar-filtros">Limpiar</button>
+        </div>
+      </div>
+
+      <!-- Tabla: las columnas de margen se ocultan para proveedores por JS -->
+      <div class="tabla-contenedor">
+        <table class="tabla-productos">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th style="text-align:right;">Precio DML</th>
+              <th style="text-align:right;">Precio sugerido</th>
+              <th class="col-margen" style="text-align:right;">Margen</th>
+              <th style="text-align:right;">Stock</th>
+              <th>Cargado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-productos-body"></tbody>
+        </table>
+        <div class="tabla-vacia" id="tabla-vacia" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H4v-2h11v2zm5-4H4v-2h16v2zm0-4H4V8h16v2z"/></svg>
+          <p>No se encontraron productos con los filtros actuales.</p>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- MODAL: CARGAR / EDITAR PRODUCTO -->
+<div class="modal" id="modal-producto" role="dialog" aria-modal="true" aria-labelledby="modal-producto-titulo">
+  <div class="modal__box modal__box--grande">
+    <div class="modal__header">
+      <h2 class="modal__titulo" id="modal-producto-titulo">Cargar nuevo producto</h2>
+      <button class="modal__cerrar" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="modal__cuerpo">
+      <form id="form-producto" novalidate>
+        <div class="form-grid form-grid--2">
+          <div class="form-group form-group--full">
+            <label class="form-label" for="campo-nombre">Nombre del producto <span>*</span></label>
+            <input class="form-control" type="text" id="campo-nombre" required placeholder="Ej: Audífonos Bluetooth Premium TWS">
+            <span class="form-error">El nombre es obligatorio.</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="campo-categoria">Categoria <span>*</span></label>
+            <select class="form-control" id="campo-categoria" required>
+              <option value="">Seleccione una categoria</option>
+            </select>
+            <span class="form-error">Seleccione una categoria.</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="campo-stock">Stock disponible <span>*</span></label>
+            <input class="form-control" type="number" id="campo-stock" required min="0" placeholder="Ej: 100">
+            <span class="form-error">Ingrese el stock.</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="campo-precio-dml">Precio DML en COP <span>*</span></label>
+            <input class="form-control" type="number" id="campo-precio-dml" required min="0" placeholder="Ej: 85000">
+            <span class="form-hint">Precio que ya incluye IVA y flete.</span>
+            <span class="form-error">Ingrese el precio DML.</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="campo-precio-sugerido">Precio sugerido de venta en COP <span>*</span></label>
+            <input class="form-control" type="number" id="campo-precio-sugerido" required min="0" placeholder="Ej: 149900">
+            <span class="form-error">Ingrese el precio sugerido.</span>
+          </div>
+          <div class="form-group form-group--full" id="preview-margen-wrap">
+            <div class="preview-margen" id="preview-margen"></div>
+          </div>
+          <div class="form-group form-group--full">
+            <label class="form-label" for="campo-descripcion">Descripcion y ficha tecnica <span>*</span></label>
+            <textarea class="form-control form-control--textarea" id="campo-descripcion" required rows="5"
+              placeholder="Describa el producto, sus características, especificaciones técnicas y cualquier información relevante..."
+              style="min-height:120px;"></textarea>
+            <span class="form-hint">Incluya dimensiones, materiales, voltaje, garantía, etc.</span>
+            <span class="form-error">La descripcion es obligatoria.</span>
+          </div>
+          <div class="form-group form-group--full">
+            <label class="form-label">Imagenes del producto <span style="color:var(--gris-400);font-weight:400;">(hasta 5)</span></label>
+            <div class="zona-upload" id="zona-upload">
+              <input type="file" id="campo-imagenes" accept="image/*" multiple>
+              <div id="zona-upload-texto">
+                <div class="zona-upload__icono">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M4 16l4-4 4 4 4-8 4 8M3 20h18M3 4h18" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <span class="zona-upload__titulo">Haga clic o arrastre imagenes aqui</span>
+                <span class="zona-upload__sub">PNG, JPG o WEBP. La primera imagen sera la principal.</span>
+              </div>
+            </div>
+            <p class="imagenes-contador" id="imagenes-contador"></p>
+            <div class="imagenes-preview-grid" id="imagenes-preview-grid"></div>
+          </div>
+        </div>
+        <div class="form-footer">
+          <button type="button" class="btn btn--secundario" id="btn-cancelar-form">Cancelar</button>
+          <button type="submit" class="btn btn--primario">Guardar producto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: DETALLE DE PRODUCTO -->
+<div class="modal" id="modal-detalle" role="dialog" aria-modal="true">
+  <div class="modal__box modal__box--grande">
+    <div class="modal__header">
+      <h2 class="modal__titulo">Detalle del producto</h2>
+      <button class="modal__cerrar" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="modal__cuerpo">
+      <div class="modal-detalle__contenido"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<script src="js/mockData.js"></script>
+<script src="js/firebaseService.js"></script>
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/products.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    renderizarLayout();
+    inicializarPaginaProductos();
+
+    const usuario = getCurrentUser();
+    if (usuario && usuario.rol === "proveedor") {
+      document.getElementById("topbar-titulo").textContent    = "Mis productos";
+      document.getElementById("topbar-subtitulo").textContent = "Productos que ha cargado";
+      // Ocultar columna margen para proveedor
+      document.querySelectorAll(".col-margen").forEach(el => el.style.display = "none");
+    }
+
+    document.getElementById("btn-cancelar-form")?.addEventListener("click", () => {
+      document.getElementById("modal-producto").classList.remove("modal--visible");
+    });
+  });
+</script>
+</body>
+</html>

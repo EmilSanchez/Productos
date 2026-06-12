@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Usuarios — Plataforma Proveedores ML</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="contenido-principal">
+
+    <header class="topbar">
+      <div class="topbar__izquierda">
+        <button class="btn-menu-toggle" id="btn-menu-toggle" aria-label="Abrir menu">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+        </button>
+        <div>
+          <p class="topbar__titulo">Usuarios</p>
+          <p class="topbar__subtitulo">Administracion de cuentas de acceso</p>
+        </div>
+      </div>
+    </header>
+
+    <main class="pagina">
+      <div class="card card--sin-padding usuarios-card">
+
+        <!-- Cabecera de la tarjeta: filtros + boton -->
+        <div class="usuarios-card__header">
+          <div class="filtros-barra filtros-barra--plana">
+            <div class="filtro-grupo" style="flex:2;min-width:220px;">
+              <label for="filtro-usuario-busqueda">Busqueda</label>
+              <input class="form-control" type="text" id="filtro-usuario-busqueda" placeholder="Nombre, usuario o rol...">
+            </div>
+            <div class="filtro-grupo">
+              <label for="filtro-usuario-rol">Rol</label>
+              <select class="form-control" id="filtro-usuario-rol">
+                <option value="">Todos los roles</option>
+                <option value="administrador">Administrador</option>
+                <option value="proveedor">Proveedor</option>
+                <option value="comercial">Comercial</option>
+              </select>
+            </div>
+            <div class="filtro-grupo">
+              <label for="filtro-usuario-estado">Estado</label>
+              <select class="form-control" id="filtro-usuario-estado">
+                <option value="">Todos</option>
+                <option value="activo">Activo</option>
+                <option value="pausado">Pausado</option>
+              </select>
+            </div>
+            <div style="display:flex;align-items:flex-end;">
+              <button class="btn btn--secundario" id="btn-limpiar-filtros-u">Limpiar</button>
+            </div>
+          </div>
+
+          <button class="btn btn--primario usuarios-card__btn-nuevo" id="btn-nuevo-usuario">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            Nuevo usuario
+          </button>
+        </div>
+
+        <!-- Tabla de usuarios -->
+        <div class="tabla-contenedor tabla-contenedor--plana">
+          <table class="tabla-productos">
+            <thead>
+              <tr>
+                <th>Usuario</th>
+                <th>Rol</th>
+                <th>Empresa / Referencia</th>
+                <th>Estado</th>
+                <th>Registro</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-usuarios-body"></tbody>
+          </table>
+          <div class="tabla-vacia" id="tabla-vacia-u" style="display:none;">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+            <p>No se encontraron usuarios con los filtros actuales.</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- MODAL: CREAR / EDITAR USUARIO -->
+<div class="modal" id="modal-usuario" role="dialog" aria-modal="true">
+  <div class="modal__box" style="max-width:520px;">
+    <div class="modal__header">
+      <h2 class="modal__titulo" id="modal-usuario-titulo">Nuevo usuario</h2>
+      <button class="modal__cerrar" id="cerrar-modal-usuario" aria-label="Cerrar">&times;</button>
+    </div>
+    <div class="modal__cuerpo">
+      <form id="form-usuario" novalidate>
+
+        <!-- Avatar preview -->
+        <div style="display:flex;justify-content:center;margin-bottom:var(--sp-5);">
+          <div class="usuario-avatar-grande" id="form-avatar-preview">?</div>
+        </div>
+
+        <div class="form-grid form-grid--2">
+          <div class="form-group form-group--full">
+            <label class="form-label" for="u-nombre">Nombre completo <span>*</span></label>
+            <input class="form-control" type="text" id="u-nombre" required placeholder="Ej: Laura Jiménez">
+            <span class="form-error">El nombre es obligatorio.</span>
+          </div>
+          <div class="form-group form-group--full">
+            <label class="form-label" for="u-email">Nombre de usuario <span id="email-requerido">*</span></label>
+            <input class="form-control" type="text" id="u-email" required placeholder="Ej: santi15">
+            <span class="form-hint" id="email-hint-edicion" style="display:none;">El nombre de usuario no se puede modificar despues de creada la cuenta.</span>
+            <span class="form-hint" id="usuario-hint-creacion">Se usara para iniciar sesion (sin espacios, en minusculas).</span>
+            <span class="form-error">Ingrese un nombre de usuario.</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="u-rol">Rol <span>*</span></label>
+            <select class="form-control" id="u-rol" required>
+              <option value="">Seleccione un rol</option>
+              <option value="administrador">Administrador</option>
+              <option value="proveedor">Proveedor</option>
+              <option value="comercial">Comercial</option>
+            </select>
+            <span class="form-error">Seleccione un rol.</span>
+          </div>
+          <div class="form-group" id="campo-empresa-wrap">
+            <label class="form-label" for="u-empresa">Empresa / Referencia (opcional)</label>
+            <input class="form-control" type="text" id="u-empresa" placeholder="Ej: Distribuidora S.A.S.">
+          </div>
+          <div class="form-group form-group--full" id="campo-password-wrap">
+            <label class="form-label" for="u-password">Contrasena <span id="pass-requerido">*</span></label>
+            <input class="form-control" type="password" id="u-password" placeholder="Minimo 6 caracteres">
+            <span class="form-hint" id="pass-hint-edicion" style="display:none;">Deje en blanco para mantener la contrasena actual.</span>
+            <span class="form-error">La contrasena debe tener al menos 6 caracteres.</span>
+          </div>
+        </div>
+
+        <div class="form-footer">
+          <button type="button" class="btn btn--secundario" id="btn-cancelar-usuario">Cancelar</button>
+          <button type="submit" class="btn btn--primario" id="btn-submit-usuario">Crear usuario</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<script src="js/mockData.js"></script>
+<script src="js/firebaseService.js"></script>
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/layout.js"></script>
+<script>
+// ─── Guardia: solo administrador ───────────────────────────
+const usuarioActual = requireAuth();
+if (usuarioActual && usuarioActual.rol !== "administrador") {
+  window.location.href = "dashboard.html";
+}
+
+// ─── Estado del módulo ─────────────────────────────────────
+const UsuariosState = { lista: [], usuarioEditandoId: null };
+
+// ─── Inicialización ────────────────────────────────────────
+if (usuarioActual && usuarioActual.rol === "administrador") {
+  renderizarLayout();
+  renderizarUsuarioActivo();
+  aplicarVisibilidadPorRol();
+  configurarSidebarMovil();
+  marcarNavActiva();
+  cargarYRenderizarUsuarios();
+  configurarFiltrosUsuarios();
+  configurarModalUsuario();
+}
+
+// ─── Carga y renderizado ───────────────────────────────────
+
+async function cargarYRenderizarUsuarios() {
+  mostrarLoader(700);
+  const todos = await getUsers();
+  UsuariosState.lista = todos;
+  renderizarTablaUsuarios(todos);
+}
+
+function renderizarTablaUsuarios(usuarios) {
+  const tbody = document.getElementById("tabla-usuarios-body");
+  const vacio = document.getElementById("tabla-vacia-u");
+  if (!tbody) return;
+
+  if (!usuarios.length) {
+    tbody.innerHTML = "";
+    if (vacio) vacio.style.display = "flex";
+    return;
+  }
+  if (vacio) vacio.style.display = "none";
+
+  tbody.innerHTML = usuarios.map(u => {
+    const activo = u.activo !== false;
+    const rolBadge = {
+      administrador: "badge--administrador",
+      proveedor:     "badge--proveedor",
+      comercial:     "badge--comercial"
+    }[u.rol] || "badge--proveedor";
+
+    const rolLabel = { administrador: "Administrador", proveedor: "Proveedor", comercial: "Comercial" }[u.rol] || u.rol;
+
+    return `
+      <tr data-id="${u.id}" class="${!activo ? "fila-pausada" : ""}">
+        <td>
+          <div class="tabla-producto-info">
+            <div class="usuario-mini-avatar ${activo ? "" : "usuario-mini-avatar--pausado"}">
+              ${u.fotoPerfil
+                ? `<img src="${u.fotoPerfil}" alt="${u.nombre}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
+                : obtenerIniciales(u.nombre)}
+            </div>
+            <div>
+              <span class="tabla-producto-nombre">${u.nombre}</span>
+              <span class="tabla-producto-cat">@${u.usuario || ""}</span>
+            </div>
+          </div>
+        </td>
+        <td><span class="badge ${rolBadge}">${rolLabel}</span></td>
+        <td style="color:var(--gris-600);font-size:0.83rem;">${u.empresa || "—"}</td>
+        <td>
+          <span class="badge ${activo ? "badge--aprobado" : "badge--rechazado"}">
+            ${activo ? "Activo" : "Pausado"}
+          </span>
+        </td>
+        <td style="color:var(--gris-500);font-size:0.82rem;">${formatearFecha(u.fechaCreacion)}</td>
+        <td>
+          <div class="tabla-acciones">
+            <button class="btn-accion btn-accion--editar" onclick="abrirEditarUsuario('${u.id}')">Editar</button>
+            <button class="btn-accion ${activo ? "btn-accion--eliminar" : "btn-accion--revisar"}"
+                    onclick="togglePausarUsuario('${u.id}', ${activo})">
+              ${activo ? "Pausar" : "Activar"}
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join("");
+}
+
+// ─── Filtros ───────────────────────────────────────────────
+
+function configurarFiltrosUsuarios() {
+  ["filtro-usuario-busqueda", "filtro-usuario-rol", "filtro-usuario-estado"].forEach(id => {
+    document.getElementById(id)?.addEventListener("input", aplicarFiltrosUsuarios);
+  });
+  document.getElementById("btn-limpiar-filtros-u")?.addEventListener("click", () => {
+    ["filtro-usuario-busqueda", "filtro-usuario-rol", "filtro-usuario-estado"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = "";
+    });
+    renderizarTablaUsuarios(UsuariosState.lista);
+  });
+}
+
+function aplicarFiltrosUsuarios() {
+  const busqueda = document.getElementById("filtro-usuario-busqueda")?.value.toLowerCase() || "";
+  const rol      = document.getElementById("filtro-usuario-rol")?.value || "";
+  const estado   = document.getElementById("filtro-usuario-estado")?.value || "";
+
+  const filtrados = UsuariosState.lista.filter(u => {
+    const activo = u.activo !== false;
+    const ok1 = !busqueda || u.nombre.toLowerCase().includes(busqueda) || (u.usuario || "").toLowerCase().includes(busqueda) || u.rol.includes(busqueda);
+    const ok2 = !rol    || u.rol === rol;
+    const ok3 = !estado || (estado === "activo" ? activo : !activo);
+    return ok1 && ok2 && ok3;
+  });
+  renderizarTablaUsuarios(filtrados);
+}
+
+// ─── Modal crear / editar ──────────────────────────────────
+
+function configurarModalUsuario() {
+  const modal   = document.getElementById("modal-usuario");
+  const form    = document.getElementById("form-usuario");
+  const btnNuevo = document.getElementById("btn-nuevo-usuario");
+
+  btnNuevo?.addEventListener("click", () => abrirNuevoUsuario());
+  document.getElementById("cerrar-modal-usuario")?.addEventListener("click", cerrarModalUsuario);
+  document.getElementById("btn-cancelar-usuario")?.addEventListener("click", cerrarModalUsuario);
+  modal?.addEventListener("click", e => { if (e.target === modal) cerrarModalUsuario(); });
+
+  // Preview de iniciales en tiempo real
+  document.getElementById("u-nombre")?.addEventListener("input", e => {
+    const el = document.getElementById("form-avatar-preview");
+    if (el) el.textContent = obtenerIniciales(e.target.value) || "?";
+  });
+
+  form?.addEventListener("submit", manejarSubmitUsuario);
+}
+
+function abrirNuevoUsuario() {
+  UsuariosState.usuarioEditandoId = null;
+  const form = document.getElementById("form-usuario");
+  form.reset();
+  document.getElementById("modal-usuario-titulo").textContent = "Nuevo usuario";
+  document.getElementById("btn-submit-usuario").textContent   = "Crear usuario";
+  document.getElementById("form-avatar-preview").textContent  = "?";
+
+  // Contrasena: requerida al crear
+  document.getElementById("pass-hint-edicion").style.display = "none";
+  document.getElementById("pass-requerido").style.display    = "inline";
+  document.getElementById("u-password").required  = true;
+  document.getElementById("u-password").disabled  = false;
+  document.getElementById("campo-password-wrap").style.display = "";
+
+  // Email: editable al crear
+  document.getElementById("u-email").readOnly = false;
+  document.getElementById("u-email").disabled = false;
+  document.getElementById("email-requerido").style.display    = "inline";
+  document.getElementById("email-hint-edicion").style.display = "none";
+  document.getElementById("usuario-hint-creacion").style.display = "block";
+
+  form.querySelectorAll(".input--error").forEach(el => el.classList.remove("input--error"));
+  document.getElementById("modal-usuario").classList.add("modal--visible");
+}
+
+function abrirEditarUsuario(id) {
+  const u = UsuariosState.lista.find(u => u.id === id);
+  if (!u) return;
+  UsuariosState.usuarioEditandoId = id;
+
+  document.getElementById("modal-usuario-titulo").textContent = "Editar usuario";
+  document.getElementById("btn-submit-usuario").textContent   = "Guardar cambios";
+  document.getElementById("u-nombre").value   = u.nombre;
+  document.getElementById("u-email").value    = u.usuario || "";
+  document.getElementById("u-rol").value      = u.rol;
+  document.getElementById("u-empresa").value  = u.empresa || "";
+  document.getElementById("u-password").value = "";
+  document.getElementById("form-avatar-preview").textContent  = obtenerIniciales(u.nombre);
+
+  // Email: no se puede modificar (requiere Firebase Admin SDK)
+  document.getElementById("u-email").readOnly = true;
+  document.getElementById("u-email").disabled = true;
+  document.getElementById("email-requerido").style.display    = "none";
+  document.getElementById("email-hint-edicion").style.display = "block";
+  document.getElementById("usuario-hint-creacion").style.display = "none";
+
+  // Contrasena: no se puede cambiar para otro usuario desde el cliente
+  document.getElementById("u-password").required = false;
+  document.getElementById("campo-password-wrap").style.display = "none";
+
+  document.getElementById("form-usuario").querySelectorAll(".input--error").forEach(el => el.classList.remove("input--error"));
+  document.getElementById("modal-usuario").classList.add("modal--visible");
+}
+
+function cerrarModalUsuario() {
+  document.getElementById("modal-usuario").classList.remove("modal--visible");
+  UsuariosState.usuarioEditandoId = null;
+}
+
+async function manejarSubmitUsuario(e) {
+  e.preventDefault();
+  const form = e.target;
+
+  const nombre   = document.getElementById("u-nombre").value.trim();
+  const usuario  = document.getElementById("u-email").value.trim().toLowerCase().replace(/\s+/g, "");
+  const rol      = document.getElementById("u-rol").value;
+  const empresa  = document.getElementById("u-empresa").value.trim();
+  const password = document.getElementById("u-password").value;
+
+  const esNuevo = !UsuariosState.usuarioEditandoId;
+
+  // Validación manual
+  let valido = true;
+  [["u-nombre", nombre], ["u-email", usuario], ["u-rol", rol]].forEach(([id, val]) => {
+    const campo = document.getElementById(id);
+    const grupo = campo.closest(".form-group");
+    const err   = grupo?.querySelector(".form-error");
+    if (!val) {
+      campo.classList.add("input--error");
+      if (err) err.style.display = "block";
+      valido = false;
+    } else {
+      campo.classList.remove("input--error");
+      if (err) err.style.display = "none";
+    }
+  });
+
+  if (esNuevo && password.length < 6) {
+    document.getElementById("u-password").classList.add("input--error");
+    document.getElementById("u-password").closest(".form-group").querySelector(".form-error").style.display = "block";
+    valido = false;
+  }
+
+  if (!valido) return;
+
+  const btn = document.getElementById("btn-submit-usuario");
+  setBotonCargando(btn, "Guardando...");
+
+  try {
+    if (esNuevo) {
+      // Crea la cuenta en Firebase Authentication + el documento en Firestore
+      await createUserAccount({ nombre, usuario, password, rol, empresa });
+      mostrarToast("Usuario creado correctamente.", "exito");
+    } else {
+      // Solo se actualizan datos de Firestore (no email ni password)
+      await updateUserData(UsuariosState.usuarioEditandoId, {
+        nombre,
+        rol,
+        empresa,
+        avatar: obtenerIniciales(nombre)
+      });
+      mostrarToast("Usuario actualizado.", "exito");
+    }
+
+    cerrarModalUsuario();
+    await cargarYRenderizarUsuarios();
+  } catch (err) {
+    mostrarToast("Error: " + err.message, "error");
+  } finally {
+    resetBoton(btn);
+  }
+}
+
+// ─── Pausar / Activar ──────────────────────────────────────
+
+function togglePausarUsuario(id, estaActivo) {
+  const u = UsuariosState.lista.find(u => u.id === id);
+  if (!u) return;
+
+  // No pausar al propio admin logueado
+  if (id === usuarioActual.id) {
+    mostrarToast("No puede pausar su propia cuenta.", "advertencia");
+    return;
+  }
+
+  mostrarConfirmacion({
+    titulo: estaActivo ? "Pausar usuario" : "Activar usuario",
+    mensaje: estaActivo
+      ? `¿Pausar la cuenta de "${u.nombre}"? El usuario no podra iniciar sesion.`
+      : `¿Activar la cuenta de "${u.nombre}"?`,
+    textoConfirmar: estaActivo ? "Pausar" : "Activar",
+    textoCancelar: "Cancelar",
+    onConfirmar: async () => {
+      try {
+        await updateUserData(id, { activo: !estaActivo });
+        mostrarToast(estaActivo ? "Usuario pausado." : "Usuario activado.", "exito");
+        await cargarYRenderizarUsuarios();
+      } catch (err) {
+        mostrarToast("Error: " + err.message, "error");
+      }
+    }
+  });
+}
+</script>
+</body>
+</html>

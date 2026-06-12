@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Plataforma Proveedores ML</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="contenido-principal">
+
+    <header class="topbar">
+      <div class="topbar__izquierda">
+        <button class="btn-menu-toggle" id="btn-menu-toggle" aria-label="Abrir menu">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+        </button>
+        <div>
+          <p class="topbar__titulo">Dashboard</p>
+          <p class="topbar__subtitulo">Resumen general de la plataforma</p>
+        </div>
+      </div>
+    </header>
+
+    <main class="pagina">
+      <div class="pagina__top-row">
+        <div class="stats-grid stats-grid--flex" id="stats-grid"></div>
+        <a href="productos.html" class="btn btn--primario pagina__top-row-btn">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 14H4v-2h11v2zm5-4H4v-2h16v2zm0-4H4V8h16v2z"/></svg>
+          Ver productos
+        </a>
+      </div>
+
+
+      <div class="dashboard-grid">
+        <div class="card">
+          <div class="card__cabecera">
+            <div>
+              <p class="card__titulo">Productos recientes</p>
+              <p class="card__subtitulo">Ultimos productos cargados</p>
+            </div>
+            <a href="productos.html" class="btn btn--secundario btn--sm">Ver todos</a>
+          </div>
+          <div id="actividad-lista"></div>
+        </div>
+
+        <div class="panel-lateral">
+          <div class="card">
+            <div class="card__cabecera"><p class="card__titulo">Proveedores activos</p></div>
+            <div id="proveedores-lista"></div>
+          </div>
+          <div class="card" style="margin-top:20px;">
+            <div class="card__cabecera"><p class="card__titulo">Por categoria</p></div>
+            <div id="distribucion-estado"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<script src="js/mockData.js"></script>
+<script src="js/firebaseService.js"></script>
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/layout.js"></script>
+<script>
+  const usuario = requireAuth();
+  if (usuario && usuario.rol === "proveedor") window.location.href = "productos.html";
+
+  if (usuario && usuario.rol !== "proveedor") {
+    renderizarLayout();
+    renderizarUsuarioActivo();
+    aplicarVisibilidadPorRol();
+    configurarSidebarMovil();
+    marcarNavActiva();
+
+    const titulos = { administrador: "Panel de administracion", comercial: "Panel comercial" };
+    document.title = (titulos[usuario.rol] || "Dashboard") + " — Plataforma Proveedores ML";
+
+    inicializarDashboard();
+  }
+
+  async function inicializarDashboard() {
+    mostrarLoader(800);
+    const productos = await getProducts();
+
+    renderizarStats(productos);
+    renderizarActividad(productos);
+    renderizarProveedores(productos);
+    renderizarDistribucion(productos);
+  }
+
+  function renderizarStats(productos) {
+    const total = productos.length;
+    document.getElementById("stats-grid").innerHTML = `
+      <div class="stat-card">
+        <div class="stat-card__icono stat-card__icono--azul">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H4v-2h11v2zm5-4H4v-2h16v2zm0-4H4V8h16v2z"/></svg>
+        </div>
+        <div class="stat-card__info">
+          <div class="stat-card__valor">${total}</div>
+          <div class="stat-card__etiqueta">Total de productos</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderizarActividad(productos) {
+    const lista = document.getElementById("actividad-lista");
+    if (!productos.length) {
+      lista.innerHTML = '<p style="color:var(--color-texto-suave);font-size:0.85rem;padding:16px 0;">Sin productos registrados aun.</p>';
+      return;
+    }
+    lista.innerHTML = productos.slice(0, 7).map(p => {
+      const margen = calcularMargen(p.precioDML, p.precioSugerido);
+      const clase  = margen.porcentaje >= 30 ? "verde" : margen.porcentaje >= 15 ? "amarillo" : "rojo";
+      return `
+        <div class="actividad-item">
+          <div class="actividad-dot actividad-dot--${clase}"></div>
+          <div class="actividad-info">
+            <p class="actividad-texto"><strong>${p.nombre}</strong> — ${p.categoria}</p>
+            <p class="actividad-fecha">${p.proveedorNombre} &middot; ${formatearFecha(p.fechaCarga)}</p>
+          </div>
+          <span class="margen-valor margen--${clase === "verde" ? "bueno" : clase === "amarillo" ? "regular" : "bajo"}"
+                style="font-size:0.8rem;font-weight:600;">${margen.porcentaje}%</span>
+        </div>`;
+    }).join("");
+  }
+
+  function renderizarProveedores(productos) {
+    const lista = document.getElementById("proveedores-lista");
+    if (!lista) return;
+    const mapa = {};
+    productos.forEach(p => {
+      if (!mapa[p.proveedorId]) mapa[p.proveedorId] = { nombre: p.proveedorNombre, conteo: 0 };
+      mapa[p.proveedorId].conteo++;
+    });
+    const arr = Object.values(mapa).sort((a, b) => b.conteo - a.conteo);
+    if (!arr.length) { lista.innerHTML = '<p style="font-size:0.82rem;color:var(--color-texto-suave);">Sin proveedores registrados.</p>'; return; }
+    lista.innerHTML = arr.map(prov => `
+      <div class="proveedor-item">
+        <div class="proveedor-avatar">${obtenerIniciales(prov.nombre)}</div>
+        <div class="proveedor-info">
+          <span class="proveedor-nombre">${prov.nombre}</span>
+          <span class="proveedor-conteo">${prov.conteo} producto${prov.conteo !== 1 ? "s" : ""}</span>
+        </div>
+      </div>`).join("");
+  }
+
+  function renderizarDistribucion(productos) {
+    const contenedor = document.getElementById("distribucion-estado");
+    if (!contenedor) return;
+    const mapa = {};
+    productos.forEach(p => { mapa[p.categoria] = (mapa[p.categoria] || 0) + 1; });
+    const top    = Object.entries(mapa).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const total  = productos.length || 1;
+    const colores = ["var(--azul-600)", "var(--verde-600)", "var(--amarillo-600)", "var(--rojo-600)", "var(--gris-500)"];
+    contenedor.innerHTML = `<div style="display:flex;flex-direction:column;gap:12px;">
+      ${top.map(([cat, count], i) => {
+        const pct = Math.round((count / total) * 100);
+        return `<div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+            <span style="font-size:0.78rem;color:var(--gris-600);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:72%">${cat}</span>
+            <span style="font-size:0.78rem;font-weight:600;color:var(--gris-900);">${count}</span>
+          </div>
+          <div style="height:6px;background:var(--gris-100);border-radius:999px;overflow:hidden;">
+            <div style="height:100%;width:${pct}%;background:${colores[i]};border-radius:999px;"></div>
+          </div>
+        </div>`;
+      }).join("")}
+    </div>`;
+  }
+</script>
+</body>
+</html>

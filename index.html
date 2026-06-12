@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iniciar sesion — Plataforma Proveedores ML</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* ═══════════════════════════════════════════════════════
+       LOGIN — card centrada con fondo azul decorado
+       ═══════════════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body { height: 100%; }
+
+    body {
+      min-height: 100vh;
+      font-family: 'Poppins', system-ui, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+      background: linear-gradient(150deg, #0D1B40 0%, #1E3A8A 55%, #1D4ED8 130%);
+    }
+
+    /* ── Decoracion del fondo ── */
+    .l-deco {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    /* Patron de puntos sutil */
+    .l-deco__dots {
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(rgba(255,255,255,0.07) 1px, transparent 1px);
+      background-size: 28px 28px;
+      opacity: 0.5;
+    }
+
+    /* Capa de puntos brillantes, revelada alrededor del cursor */
+    .l-deco__dots-glow {
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(rgba(96,165,250,0.9) 1.5px, transparent 1.5px);
+      background-size: 28px 28px;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+      -webkit-mask-image: radial-gradient(circle 160px at var(--mx, -1000px) var(--my, -1000px), white 0%, transparent 100%);
+      mask-image: radial-gradient(circle 160px at var(--mx, -1000px) var(--my, -1000px), white 0%, transparent 100%);
+    }
+
+    .l-deco__dots-glow--activo {
+      opacity: 1;
+    }
+
+    /* Blobs de luz difusos */
+    .l-blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0;
+      animation: blobIn 1.4s ease forwards;
+    }
+
+    .l-blob--1 {
+      width: 520px; height: 520px;
+      background: radial-gradient(circle, rgba(96,165,250,0.30) 0%, transparent 70%);
+      top: -180px; left: -160px;
+      animation-delay: 0s;
+    }
+    .l-blob--2 {
+      width: 460px; height: 460px;
+      background: radial-gradient(circle, rgba(13,27,64,0.55) 0%, transparent 70%);
+      bottom: -160px; right: -120px;
+      animation-delay: 0.2s;
+    }
+    .l-blob--3 {
+      width: 320px; height: 320px;
+      background: radial-gradient(circle, rgba(255,255,255,0.10) 0%, transparent 70%);
+      bottom: 8%; left: 6%;
+      animation-delay: 0.4s;
+    }
+    .l-blob--4 {
+      width: 260px; height: 260px;
+      background: radial-gradient(circle, rgba(59,130,246,0.25) 0%, transparent 70%);
+      top: 10%; right: 8%;
+      animation-delay: 0.6s;
+    }
+
+    @keyframes blobIn { to { opacity: 1; } }
+
+    /* Anillos concentricos sutiles */
+    .l-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.07);
+      opacity: 0;
+      animation: ringIn 1s ease forwards;
+    }
+    .l-ring--1 { width: 700px; height: 700px; top: -220px; left: -260px; animation-delay: 0.1s; }
+    .l-ring--2 { width: 520px; height: 520px; top: -130px; left: -170px; animation-delay: 0.25s; }
+    .l-ring--3 { width: 460px; height: 460px; bottom: -200px; right: -160px; animation-delay: 0.35s; }
+    .l-ring--4 { width: 320px; height: 320px; bottom: -110px; right: -70px; animation-delay: 0.5s; }
+
+    @keyframes ringIn { to { opacity: 1; } }
+
+    /* Lineas diagonales finas */
+    .l-line {
+      position: absolute;
+      background: rgba(255,255,255,0.05);
+      opacity: 0;
+      animation: lineIn 1s ease forwards;
+    }
+    .l-line--1 {
+      width: 2px; height: 320px;
+      top: 6%; left: 18%;
+      transform: rotate(18deg);
+      animation-delay: 0.55s;
+    }
+    .l-line--2 {
+      width: 2px; height: 220px;
+      bottom: 8%; right: 22%;
+      transform: rotate(-22deg);
+      animation-delay: 0.7s;
+    }
+
+    @keyframes lineIn { to { opacity: 1; } }
+
+    /* ── Card de login ── */
+    .l-wrap {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .l-card {
+      width: 100%;
+      max-width: 400px;
+      background: rgba(8,14,31,0.85);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 28px;
+      padding: 48px 40px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 30px 70px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.02) inset;
+      opacity: 0;
+      transform: translateY(24px) scale(0.98);
+      animation: cardIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.2s forwards;
+    }
+
+    @keyframes cardIn {
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .l-card__titulo {
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    .l-card__sub {
+      font-size: 0.84rem;
+      color: rgba(255,255,255,0.35);
+      margin-bottom: 38px;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    /* Labels */
+    .l-label {
+      display: block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: rgba(255,255,255,0.35);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 10px;
+    }
+
+    /* Inputs — estilo pill moderno */
+    .l-input-wrap {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .l-input-wrap--ultimo {
+      margin-bottom: 28px;
+    }
+
+    .l-input-wrap svg {
+      position: absolute;
+      left: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 17px; height: 17px;
+      color: rgba(255,255,255,0.35);
+      pointer-events: none;
+      transition: color 0.2s ease;
+    }
+
+    .l-input {
+      width: 100%;
+      padding: 16px 20px 16px 50px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 999px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.9rem;
+      color: white;
+      outline: none;
+      transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .l-input::placeholder { color: rgba(255,255,255,0.2); }
+
+    .l-input:focus {
+      border-color: #3B82F6;
+      background: rgba(59,130,246,0.08);
+      box-shadow: 0 0 0 4px rgba(59,130,246,0.12);
+    }
+
+    .l-input-wrap:has(.l-input:focus) svg {
+      color: #60A5FA;
+    }
+
+    /* Evitar que el autocompletado del navegador ponga fondo claro */
+    .l-input:-webkit-autofill,
+    .l-input:-webkit-autofill:hover,
+    .l-input:-webkit-autofill:focus,
+    .l-input:-webkit-autofill:active {
+      -webkit-text-fill-color: #ffffff;
+      caret-color: #ffffff;
+      transition: background-color 9999s ease-in-out 0s;
+      box-shadow: 0 0 0 1000px rgba(255,255,255,0.05) inset;
+      -webkit-box-shadow: 0 0 0 1000px rgba(255,255,255,0.05) inset;
+      border-color: rgba(255,255,255,0.09);
+    }
+
+    .l-input:-webkit-autofill::first-line {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.9rem;
+    }
+
+    .l-input--error {
+      border-color: rgba(239,68,68,0.7) !important;
+      background: rgba(239,68,68,0.06) !important;
+    }
+
+    /* Mensaje de error */
+    .l-error {
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.25);
+      border-radius: 12px;
+      padding: 12px 18px;
+      font-size: 0.8rem;
+      color: #FCA5A5;
+      margin-bottom: 18px;
+      display: none;
+      animation: errorApparece 0.25s ease;
+    }
+
+    @keyframes errorApparece {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Botón — pill con gradiente */
+    .l-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 60%, #1E3A8A 100%);
+      color: white;
+      border: none;
+      border-radius: 999px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+      box-shadow: 0 8px 24px rgba(29,78,216,0.35);
+    }
+
+    .l-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(29,78,216,0.45);
+      filter: brightness(1.08);
+    }
+    .l-btn:active { transform: translateY(0); }
+    .l-btn:disabled { opacity: 0.6; pointer-events: none; }
+
+    /* Footer */
+    .l-footer {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 32px;
+    }
+
+    .l-footer__version {
+      font-size: 0.68rem;
+      color: rgba(255,255,255,0.15);
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 480px) {
+      .l-card { padding: 36px 26px; border-radius: 22px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Decoracion de fondo -->
+<div class="l-deco">
+  <div class="l-deco__dots"></div>
+  <div class="l-deco__dots-glow" id="dots-glow"></div>
+  <div class="l-blob l-blob--1"></div>
+  <div class="l-blob l-blob--2"></div>
+  <div class="l-blob l-blob--3"></div>
+  <div class="l-blob l-blob--4"></div>
+  <div class="l-ring l-ring--1"></div>
+  <div class="l-ring l-ring--2"></div>
+  <div class="l-ring l-ring--3"></div>
+  <div class="l-ring l-ring--4"></div>
+  <div class="l-line l-line--1"></div>
+  <div class="l-line l-line--2"></div>
+</div>
+
+<div class="l-wrap">
+  <div class="l-card">
+
+    <h2 class="l-card__titulo">Iniciar sesion</h2>
+    <p class="l-card__sub">Ingresa tus datos para iniciar sesion.</p>
+
+    <div id="login-error" class="l-error" role="alert"></div>
+
+    <form id="form-login" novalidate>
+      <div>
+        <label class="l-label" for="login-email">Usuario</label>
+        <div class="l-input-wrap">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+          </svg>
+          <input class="l-input" type="text" id="login-email" placeholder="santi15" autocomplete="username" required>
+        </div>
+      </div>
+
+      <div>
+        <label class="l-label" for="login-password">Contrasena</label>
+        <div class="l-input-wrap l-input-wrap--ultimo">
+          <input class="l-input" type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" required>
+        </div>
+      </div>
+
+      <button type="submit" class="l-btn" id="btn-login">Entrar</button>
+    </form>
+
+    <div class="l-footer">
+      <span class="l-footer__version">v1.0 · Firebase ready</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Iluminacion de puntos siguiendo el cursor, con retraso suave (lerp)
+  const dotsGlow = document.getElementById("dots-glow");
+
+  let targetX = -1000, targetY = -1000;
+  let currentX = -1000, currentY = -1000;
+  let activo = false;
+
+  document.addEventListener("mousemove", (e) => {
+    targetX = e.clientX;
+    targetY = e.clientY;
+    if (!activo) {
+      activo = true;
+      dotsGlow.classList.add("l-deco__dots-glow--activo");
+    }
+  });
+
+  document.addEventListener("mouseleave", () => {
+    activo = false;
+    dotsGlow.classList.remove("l-deco__dots-glow--activo");
+  });
+
+  function animarGlow() {
+    // Interpolacion suave hacia la posicion objetivo (efecto de retraso)
+    currentX += (targetX - currentX) * 0.12;
+    currentY += (targetY - currentY) * 0.12;
+    dotsGlow.style.setProperty("--mx", currentX + "px");
+    dotsGlow.style.setProperty("--my", currentY + "px");
+    requestAnimationFrame(animarGlow);
+  }
+  animarGlow();
+</script>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<script src="js/mockData.js"></script>
+<script src="js/firebaseService.js"></script>
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  redirectIfAuth();
+
+  document.getElementById("form-login").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const errorEl  = document.getElementById("login-error");
+    const btn      = document.getElementById("btn-login");
+    const email    = document.getElementById("login-email").value.trim();
+    const password = document.getElementById("login-password").value;
+
+    errorEl.style.display = "none";
+    document.getElementById("login-email").classList.remove("l-input--error");
+    document.getElementById("login-password").classList.remove("l-input--error");
+
+    if (!email)    { document.getElementById("login-email").classList.add("l-input--error"); return; }
+    if (!password) { document.getElementById("login-password").classList.add("l-input--error"); return; }
+
+    btn.disabled    = true;
+    btn.textContent = "Verificando...";
+
+    try {
+      await loginUser(email, password);
+      // Animación de salida
+      document.querySelector(".l-card").style.cssText = "opacity:0;transform:translateY(-10px) scale(0.98);transition:all 0.3s ease;";
+      setTimeout(() => {
+        const usuario = getCurrentUser();
+        window.location.href = usuario && usuario.rol === "proveedor" ? "productos.html" : "dashboard.html";
+      }, 320);
+    } catch (err) {
+      errorEl.textContent   = err.message;
+      errorEl.style.display = "block";
+      btn.disabled    = false;
+      btn.textContent = "Entrar";
+      document.getElementById("login-email").classList.add("l-input--error");
+      document.getElementById("login-password").classList.add("l-input--error");
+    }
+  });
+</script>
+
+</body>
+</html>
